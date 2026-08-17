@@ -7,7 +7,6 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
-COPY README.md ./
 
 ENV NODE_ENV=production
 ENV PORT=5001
