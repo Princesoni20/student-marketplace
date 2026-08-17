@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: student-marketplace
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: student-marketplace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: studentmarketplace-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+
+          env:
+            - name: NODE_ENV
+              value: production
+
+            - name: PORT
+              value: "3000"
+
+            - name: HOSTNAME
+              value: "0.0.0.0"
+
+            - name: PRODUCT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: student-marketplace-config
+                  key: PRODUCT_SERVICE_URL
+
+            - name: NEXT_PUBLIC_AUTH_API_URL
+              value: "http://localhost:5002/api/auth"
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6

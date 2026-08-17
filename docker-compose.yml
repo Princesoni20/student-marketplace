@@ -1,16 +1,25 @@
 services:
+
+  # =====================================================
+  # POSTGRESQL DATABASE
+  # =====================================================
+
   postgres:
     image: postgres:18
     container_name: student-marketplace-postgres
     restart: unless-stopped
+
     environment:
       POSTGRES_DB: student_marketplace
       POSTGRES_USER: marketplace_user
       POSTGRES_PASSWORD: marketplace_dev_password
+
     ports:
-      - "5432:5432"
+      - "5433:5432"
+
     volumes:
       - postgres_data:/var/lib/postgresql
+
     healthcheck:
       test:
         [
@@ -20,29 +29,197 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+
     networks:
       - student-marketplace-network
+
+
+  # =====================================================
+  # REDIS CACHE
+  # =====================================================
 
   redis:
     image: redis:7-alpine
     container_name: student-marketplace-redis
     restart: unless-stopped
+
     ports:
       - "6379:6379"
+
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
+
     networks:
       - student-marketplace-network
+
+
+  # =====================================================
+  # AUTH SERVICE
+  # =====================================================
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+
+    container_name: student-marketplace-auth-service
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 5002
+
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: marketplace_user
+      DB_PASSWORD: marketplace_dev_password
+      DB_NAME: student_marketplace
+
+      JWT_SECRET: student_marketplace_jwt_secret_change_this_very_long_random_value_2026
+      JWT_EXPIRES_IN: 7d
+
+    ports:
+      - "5002:5002"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - student-marketplace-network
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5002/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+
+  # =====================================================
+  # PRODUCT SERVICE
+  # =====================================================
+
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+
+    container_name: student-marketplace-product-service
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: marketplace_user
+      DB_PASSWORD: marketplace_dev_password
+      DB_NAME: student_marketplace
+
+      REDIS_URL: redis://redis:6379
+
+    ports:
+      - "5001:5001"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+    networks:
+      - student-marketplace-network
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+
+  # =====================================================
+  # NEXT.JS FRONTEND
+  # =====================================================
+
+  frontend:
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+
+    container_name: student-marketplace-frontend
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+
+      # Product Service
+      PRODUCT_SERVICE_URL: http://product-service:5001/api
+
+      # Auth Service - browser/client side
+      NEXT_PUBLIC_AUTH_API_URL: http://localhost:5002/api/auth
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      product-service:
+        condition: service_healthy
+
+      auth-service:
+        condition: service_healthy
+
+    networks:
+      - student-marketplace-network
+
+
+# =====================================================
+# PERSISTENT VOLUMES
+# =====================================================
 
 volumes:
   postgres_data:
   redis_data:
+
+
+# =====================================================
+# DOCKER NETWORK
+# =====================================================
 
 networks:
   student-marketplace-network:

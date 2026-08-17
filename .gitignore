@@ -1,0 +1,38 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dependencies
+**/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.next/
+**/.next/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.stackdump
+
+# IDE
+.vscode/
+.idea/
+
+# Local temporary files
+new folder
+
+# Kubernetes secrets
+kubernetes/config/secret.yaml
+
+# AI/editor instruction files
+frontend-next/AGENTS.md
+frontend-next/CLAUDE.md
