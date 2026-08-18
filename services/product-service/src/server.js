@@ -130,11 +130,11 @@ const startServer = async () => {
       "✅ Redis connection verified"
     );
 
-    app.listen(PORT, () => {
-      console.log(
-        `🚀 Product Service running on http://localhost:${PORT}`
-      );
-    });
+    app.listen(PORT, "0.0.0.0", () => {
+  console.log(
+    `🚀 Product Service running on port ${PORT}`
+  );
+});
   } catch (error) {
     console.error(
       "❌ Failed to start Product Service:",
