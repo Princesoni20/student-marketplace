@@ -7,7 +7,11 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { getAuthToken, removeAuthToken } from "@/lib/auth";
+import {
+  getAuthToken,
+  getCurrentUser,
+  removeAuthToken,
+} from "@/lib/auth";
 const API_BASE_URL = "/api";
 
 const PRODUCT_SERVICE_URL = "/api";
@@ -550,10 +554,10 @@ export default function Home() {
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [profile, setProfile] = useState({
-    name: "Prince Kumar",
-    email: "princesoni1220@gmail.com",
-    phone: "7061332607",
-  });
+  name: "",
+  email: "",
+  phone: "",
+});
 
     const [authUser, setAuthUser] = useState<{
     id: string;
@@ -566,6 +570,95 @@ export default function Home() {
   } | null>(null);
 
   const [authLoading, setAuthLoading] = useState(true);
+  useEffect(() => {
+  let cancelled = false;
+
+  const loadAuthenticatedUser = async () => {
+    try {
+      setAuthLoading(true);
+
+      const token = getAuthToken();
+
+      if (!token) {
+        if (!cancelled) {
+          setAuthUser(null);
+          setProfile({
+            name: "",
+            email: "",
+            phone: "",
+          });
+        }
+        return;
+      }
+
+      const response = await getCurrentUser(token);
+
+      if (
+        !cancelled &&
+        response.success &&
+        response.data
+      ) {
+        const user = response.data;
+
+        setAuthUser(user);
+
+        const fullName = [
+          user.firstName,
+          user.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        setProfile({
+          name: fullName || "Student",
+          email: user.email || "",
+          phone: user.phone || "",
+        });
+      }
+    } catch (error) {
+      console.error(
+        "Could not load authenticated user.",
+        error
+      );
+
+      if (!cancelled) {
+        removeAuthToken();
+
+        setAuthUser(null);
+
+        setProfile({
+          name: "",
+          email: "",
+          phone: "",
+        });
+      }
+    } finally {
+      if (!cancelled) {
+        setAuthLoading(false);
+      }
+    }
+  };
+
+  loadAuthenticatedUser();
+
+  const handleAuthUpdate = () => {
+    loadAuthenticatedUser();
+  };
+
+  window.addEventListener(
+    "student-marketplace-auth-updated",
+    handleAuthUpdate
+  );
+
+  return () => {
+    cancelled = true;
+
+    window.removeEventListener(
+      "student-marketplace-auth-updated",
+      handleAuthUpdate
+    );
+  };
+}, []);
 
   const [mobileMenu, setMobileMenu] = useState(false);
   const [allCategoriesOpen, setAllCategoriesOpen] =
@@ -575,20 +668,7 @@ export default function Home() {
     Record<string, string>
   >({});
 
-  useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem("student-marketplace-profile");
-      if (savedProfile) setProfile(JSON.parse(savedProfile));
-    } catch (storageError) {
-      console.error("Could not restore profile.", storageError);
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("student-marketplace-profile", JSON.stringify(profile));
-    } catch {}
-  }, [profile]);
+  
 
   useEffect(() => {
     try {
