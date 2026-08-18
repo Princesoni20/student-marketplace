@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 
 const USER_ROLE_ID =
-  "172344fb-c186-495f-a6d8-1abe9730452c";
+  "2b73fc4c-c370-49cd-acf9-1389f4cd3a23";
 
 /*
  * Generate JWT
