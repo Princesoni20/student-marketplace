@@ -1,22 +1,22 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-const pool = new Pool({
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT || 5432),
-  user: process.env.DB_USER || "marketplace_user",
-  password:
-    process.env.DB_PASSWORD || "marketplace_dev_password",
-  database:
-    process.env.DB_NAME || "student_marketplace",
+const databaseUrl = process.env.DATABASE_URL;
 
-  // Render PostgreSQL requires SSL/TLS
+const pool = new Pool({
+  connectionString: databaseUrl,
+
   ssl:
     process.env.NODE_ENV === "production"
       ? {
           rejectUnauthorized: false,
         }
       : false,
+
+  max: 5,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  keepAlive: true,
 });
 
 pool.on("connect", () => {
@@ -26,7 +26,7 @@ pool.on("connect", () => {
 pool.on("error", (error) => {
   console.error(
     "❌ Product Service PostgreSQL pool error:",
-    error
+    error.message
   );
 });
 
