@@ -1570,41 +1570,52 @@ export default function Home() {
           </form>
 
           <div className="header-actions">
-            <button
-              type="button"
-              onClick={() => {
-                setWishlistOpen(true);
-                setCartOpen(false);
-              }}
-            >
-              ♡ Wishlist
-              {wishlist.length > 0 && (
-                <b>{wishlist.length}</b>
-              )}
-            </button>
+  <button
+    type="button"
+    onClick={() => {
+      setWishlistOpen(true);
+      setCartOpen(false);
+      setAccountOpen(false);
+    }}
+  >
+    ♡ Wishlist
+    {wishlist.length > 0 && (
+      <b>{wishlist.length}</b>
+    )}
+  </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setCartOpen(true);
-                setWishlistOpen(false);
-              }}
-            >
-              🛒 Cart
-              {cartCount > 0 && <b>{cartCount}</b>}
-            </button>
+  <button
+    type="button"
+    onClick={() => {
+      setCartOpen(true);
+      setWishlistOpen(false);
+      setAccountOpen(false);
+    }}
+  >
+    🛒 Cart
+    {cartCount > 0 && <b>{cartCount}</b>}
+  </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setAccountOpen(true);
-                setCartOpen(false);
-                setWishlistOpen(false);
-              }}
-            >
-              👤 Account
-            </button>
-          </div>
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/auth";
+    }}
+  >
+    🔐 Login / Register
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setAccountOpen(true);
+      setCartOpen(false);
+      setWishlistOpen(false);
+    }}
+  >
+    👤 Account
+  </button>
+</div>
 
           <button
             type="button"
